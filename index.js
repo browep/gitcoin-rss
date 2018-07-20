@@ -34,6 +34,8 @@ console.log(`contractInstance: ${contractInstance}`);
 const numBounties = contractInstance.getNumBounties();
 console.log(`numBounties: ${numBounties}`);
 
+const bountyArray = [];
+
 const createBountyDataCallback = i => {
     return (error, bountyDataId) => {
         if (error) {
