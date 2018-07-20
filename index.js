@@ -6,6 +6,14 @@ nconf.argv()
     .env()
     .file({ file: './config.json' });
 
+var s3 = require('s3');
+var client = s3.createClient({
+    s3Options: {
+      accessKeyId: nconf.get("S3_KEY"),
+      secretAccessKey: nconf.get("S3_SECRET"),
+    },
+  });
+
 const abiArray = require('./contract-abi.json');
 
 const rp = require('request-promise');
@@ -33,7 +41,7 @@ const createBountyDataCallback = i => {
             return;
         }
 
-        rp(`https://ipfs.io/ipfs/${bountyDataId}`)
+        rp(`${nconf.get('ipfs_url_base')}${bountyDataId}`)
             .then((resBody) => {
                 const bountyData = JSON.parse(resBody);
                 if (bountyData && bountyData.payload) {
@@ -52,6 +60,4 @@ const createBountyDataCallback = i => {
 for ( let i = 0; i < numBounties; i++) {
     contractInstance.getBountyData(i, createBountyDataCallback(i));
 }
-
-
 
