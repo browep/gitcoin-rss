@@ -1,18 +1,19 @@
 'use strict';
-
+const util = require('util');
 const fs = require('fs');
+const tmp = require('tmp');
 const nconf = require('nconf');
 nconf.argv()
     .env()
     .file({ file: './config.json' });
 
 var s3 = require('s3');
-var client = s3.createClient({
+var s3Client = s3.createClient({
     s3Options: {
-      accessKeyId: nconf.get("S3_KEY"),
-      secretAccessKey: nconf.get("S3_SECRET"),
+        accessKeyId: nconf.get("S3_KEY"),
+        secretAccessKey: nconf.get("S3_SECRET"),
     },
-  });
+});
 
 const abiArray = require('./contract-abi.json');
 
@@ -69,9 +70,9 @@ const createBountyDataCallback = i => {
                 onBountyRetrieval();
             })
     };
-} 
+}
 
-for ( let i = 0; i < numBounties; i++) {
+for (let i = 0; i < numBounties; i++) {
     contractInstance.getBountyData(i, createBountyDataCallback(i));
 }
 
@@ -79,9 +80,54 @@ const onBountyRetrieval = () => {
     bountyWaitCount--;
 
     if (bountyWaitCount == 0) {
-        
+        // we have downloaded all the bounties we can. check the current state
+
+        tmp.file((err, stateFileDownloadPath, fd, cleanupCallback) => {
+            if (err) throw err;
+
+            console.log('Tmp State File: ', stateFileDownloadPath);
+            const stateFileS3Params = {
+                localFile: stateFileDownloadPath,
+                s3Params: {
+                    Bucket: nconf.get('s3_bucket'),
+                    Key: 'state.json'
+                }
+            }
+
+            var downloader = s3Client.downloadFile(stateFileS3Params);
+            downloader.on('error', function (err) {
+                // could not find a state file, lets assume this is the first run
+                if (err.message && err.message.includes("404")) {
+                    onNewItems();
+                } else {
+                    console.error("unknown error downloading state file", err);
+                }
+            });
+            downloader.on('end', function () {
+                console.log("done downloading");
+                fs.readFile(stateFileDownloadPath, (err, data) => {
+                    if (err) throw err;
+                    const currentState = JSON.parse(data);
+                    console.log(`current state: ${currentState}`);
+                    console.log(`currentState.count=${currentState.count}, bountyArray.length=${bountyArray.length}`);
+                    if (currentState.count < bountyArray.length) {
+                        // we have more bounties then there are in the current state
+                        onNewItems();
+                    } else {
+                        // no new bounties
+                        console.log(`no new bounties, done.`);
+                    }
+                  });
+            });
+        });
     }
 }
+
+const onNewItems =  () => {
+    console.log(`creating new feed with ${bountyArray.length} bounties`);
+
+};
+
 
 
 
