@@ -21,7 +21,6 @@ const Web3 = require('web3');
 
 const outputFile = `/tmp/gitcoinrss.json`;
 
-
 const web3 = new Web3(new Web3.providers.HttpProvider(nconf.get('eth_address')));
 
 const nodeVersion = web3.version.node;
@@ -78,16 +77,11 @@ for ( let i = 0; i < numBounties; i++) {
 
 const onBountyRetrieval = () => {
     bountyWaitCount--;
-    console.log(`bountWaitCount=${bountyWaitCount}`);
 
     if (bountyWaitCount == 0) {
-        fs.writeFile(outputFile, JSON.stringify(bountyArray), (err) => {
-            if (err) throw err;
-
-            console.log(`wrote to ${outputFile}`);
-
-        });
-
+        
     }
 }
+
+
 
