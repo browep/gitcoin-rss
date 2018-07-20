@@ -1,32 +1,16 @@
 'use strict';
 
-const rp = require('request-promise');
-
 const ethBaseUrl = `http://localhost:8545`;
 
+const rp = require('request-promise');
+const Web3 = require('web3');
 console.log(`started, eth url: ${ethBaseUrl}`);
 
-const versionOptions =  {
-    method: 'POST',
-    url: ethBaseUrl,
-    body: {
-        'jsonrpc': '2.0',
-        'method': 'web3_clientVersion',
-        'params': [],
-        'id': 67
-    },
-    json: true
-}
+const web3 = new Web3(new Web3.providers.HttpProvider(ethBaseUrl));
 
-rp(versionOptions)
-    .then( (jsonBody)=> {
-        console.log(jsonBody);
+const nodeVersion = web3.version.node;
 
-    })
-    .catch( (err) => {
-        console.log(err);
-
-    });
+console.log(`node version: ${nodeVersion}`);
 
 
 
