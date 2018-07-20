@@ -20,5 +20,9 @@ const contractInstance = BountyContract.at(contractAddress);
 
 console.log(`contractInstance: ${contractInstance}`);
 
+const numBounties = contractInstance.getNumBounties();
+console.log(`numBounties: ${numBounties}`);
+
+
 
 
