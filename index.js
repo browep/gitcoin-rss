@@ -148,7 +148,7 @@ const onNewItems = () => {
     if (!bountyArray || bountyArray.length < 15) throw "expecting at least 15 bounties";
 
     for (let i = 1; i < 16; i++) {
-        const bountyData = bountyArray[bountyArray.length-i];
+        const bountyData = bountyArray[bountyArray.length - i];
         try {
             feed.addItem({
                 title: bountyData.title,
@@ -156,7 +156,7 @@ const onNewItems = () => {
                 description: _.get(bountyData, "metadata.issueKeywords", bountyData.description),
                 content: bountyData.description,
             })
-        } catch(err) {
+        } catch (err) {
             console.error("issue with " + bountyData);
         }
     }
@@ -167,5 +167,27 @@ const onNewItems = () => {
     fs.writeFile(rssOutputPath, rssContent, (err) => {
         if (err) throw err;
         console.log(`wrote to ${rssOutputPath}`);
+
+        var params = {
+            localFile: rssOutputPath,
+
+            s3Params: {
+                Bucket: nconf.get('s3_bucket'),
+                Key: "feed.rss",
+            },
+        };
+        var uploader = s3Client.uploadFile(params);
+        uploader.on('error', function (err) {
+            console.error("unable to upload:", err.stack);
+        });
+        uploader.on('progress', function () {
+            console.log("rss upload progress", uploader.progressMd5Amount,
+                uploader.progressAmount, uploader.progressTotal);
+        });
+        uploader.on('end', function () {
+            console.log("done uploading rss file");
+        });
     });
+
+
 };
