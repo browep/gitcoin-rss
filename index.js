@@ -24,16 +24,29 @@ const numBounties = contractInstance.getNumBounties();
 console.log(`numBounties: ${numBounties}`);
 
 const createBountyDataCallback = i => {
-    return (error, bountyData) => {
+    return (error, bountyDataId) => {
         if (error) {
             console.log(`error: ${error}`);
             return;
         }
-        console.log(`${i}=${bountyData}`);
+
+        rp(`https://ipfs.io/ipfs/${bountyDataId}`)
+            .then((resBody) => {
+                const bountyData = JSON.parse(resBody);
+                if (bountyData && bountyData.payload) {
+                    console.log(`${i}=${bountyData.payload.title}`);}
+                else {
+                    console.log(`${i}=undefined`);
+                }
+
+            })
+            .catch(err => {
+                console.log(err);
+            })
     };
 } 
 
-for ( let i = 0; i < 10; i++) {
+for ( let i = 0; i < numBounties; i++) {
     contractInstance.getBountyData(i, createBountyDataCallback(i));
 }
 
