@@ -144,14 +144,22 @@ const onNewItems = () => {
         }
     });
 
-    bountyArray.slice().reverse().slice(-15).forEach(bountyData => {
-        feed.addItem({
-            title: bountyData.title,
-            link: bountyData.webReferenceURL,
-            description: _.get(bountyData, "metadata.issueKeywords", bountyData.description),
-            content: bountyData.description,
-        })
-    });
+    // if bountyArray does not have 15 elems, throw
+    if (!bountyArray || bountyArray.length < 15) throw "expecting at least 15 bounties";
+
+    for (let i = 1; i < 16; i++) {
+        const bountyData = bountyArray[bountyArray.length-i];
+        try {
+            feed.addItem({
+                title: bountyData.title,
+                link: bountyData.webReferenceURL,
+                description: _.get(bountyData, "metadata.issueKeywords", bountyData.description),
+                content: bountyData.description,
+            })
+        } catch(err) {
+            console.error("issue with " + bountyData);
+        }
+    }
 
     const rssContent = feed.rss2();
 
