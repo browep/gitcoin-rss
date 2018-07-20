@@ -23,6 +23,19 @@ console.log(`contractInstance: ${contractInstance}`);
 const numBounties = contractInstance.getNumBounties();
 console.log(`numBounties: ${numBounties}`);
 
+const createBountyDataCallback = i => {
+    return (error, bountyData) => {
+        if (error) {
+            console.log(`error: ${error}`);
+            return;
+        }
+        console.log(`${i}=${bountyData}`);
+    };
+} 
+
+for ( let i = 0; i < 10; i++) {
+    contractInstance.getBountyData(i, createBountyDataCallback(i));
+}
 
 
 
