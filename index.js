@@ -3,6 +3,9 @@ const util = require('util');
 const fs = require('fs');
 const tmp = require('tmp');
 const nconf = require('nconf');
+const Feed = require('feed');
+var _ = require('lodash');
+
 nconf.argv()
     .env()
     .file({ file: './config.json' });
@@ -117,17 +120,44 @@ const onBountyRetrieval = () => {
                         // no new bounties
                         console.log(`no new bounties, done.`);
                     }
-                  });
+                });
             });
         });
     }
 }
 
-const onNewItems =  () => {
+const onNewItems = () => {
     console.log(`creating new feed with ${bountyArray.length} bounties`);
 
+    let feed = new Feed({
+        title: 'Gitcoin Bounties (Unofficial)',
+        description: 'Gitcoin Bounties',
+        id: 'https://github.com/browep/gitcoin-rss',
+        link: 'https://github.com/browep/gitcoin-rss',
+        image: 'https://s3-us-west-2.amazonaws.com/gitcoin-rss/gitcoin-logo.png',
+        favicon: 'https://s3-us-west-2.amazonaws.com/gitcoin-rss/gitcoin-favicon.png',
+        copyright: 'see Gitcoin',
+        author: {
+            name: 'Paul Brower',
+            email: 'brower.paul@gmail.com',
+            link: 'https://github.com/browep/gitcoin-rss'
+        }
+    });
+
+    bountyArray.slice().reverse().slice(-15).forEach(bountyData => {
+        feed.addItem({
+            title: bountyData.title,
+            link: bountyData.webReferenceURL,
+            description: _.get(bountyData, "metadata.issueKeywords", bountyData.description),
+            content: bountyData.description,
+        })
+    });
+
+    const rssContent = feed.rss2();
+
+    const rssOutputPath = '/tmp/gitcoin.rss';
+    fs.writeFile(rssOutputPath, rssContent, (err) => {
+        if (err) throw err;
+        console.log(`wrote to ${rssOutputPath}`);
+    });
 };
-
-
-
-
