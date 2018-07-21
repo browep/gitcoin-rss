@@ -5,6 +5,7 @@ const tmp = require('tmp');
 const nconf = require('nconf');
 const Feed = require('feed');
 var _ = require('lodash');
+const format = require('./lib/format.js')
 
 nconf.argv()
     .env()
@@ -153,8 +154,8 @@ const onNewItems = () => {
             feed.addItem({
                 title: bountyData.title,
                 link: bountyData.webReferenceURL,
-                description: _.get(bountyData, "metadata.issueKeywords", bountyData.description),
-                content: bountyData.description,
+                description: format.toHtml(_.get(bountyData, "metadata.issueKeywords", bountyData.description)),
+                content: format.toHtml(bountyData.description),
             })
         } catch (err) {
             console.error("issue with " + bountyData);

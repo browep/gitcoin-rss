@@ -12,6 +12,7 @@
   "dependencies": {
     "feed": "^1.1.1",
     "lodash": "^4.17.10",
+    "marked": "^0.4.0",
     "nconf": "^0.10.0",
     "request": "^2.87.0",
     "request-promise": "^4.2.2",
