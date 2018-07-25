@@ -6,6 +6,7 @@ const nconf = require('nconf');
 const Feed = require('feed');
 var _ = require('lodash');
 const format = require('./lib/format.js')
+const dao = require('./lib/dao.js');
 
 nconf.argv()
     .env()
@@ -41,9 +42,6 @@ console.log(`contractInstance: ${contractInstance}`);
 const numBounties = contractInstance.getNumBounties();
 console.log(`numBounties: ${numBounties}`);
 
-const bountyArray = [];
-var bountyWaitCount = numBounties;
-
 const createBountyDataCallback = i => {
     return (error, bountyDataId) => {
         if (error) {
@@ -51,81 +49,24 @@ const createBountyDataCallback = i => {
             return;
         }
 
-        rp(`${nconf.get('ipfs_url_base')}${bountyDataId}`)
-            .then((resBody) => {
-                const bountyData = JSON.parse(resBody);
-                if (bountyData && bountyData.title) {
-                    console.log(`${i}=${bountyData.title}`);
-                    bountyArray[i] = bountyData;
-                }
-                else if (bountyData && bountyData.payload) {
-                    console.log(`${i}=${bountyData.payload.title}`);
-                    bountyArray[i] = bountyData.payload;
-                }
-                else {
-                    console.log(`${i}=undefined`);
-                }
-
-
-                onBountyRetrieval();
-            })
-            .catch(err => {
-                console.log(`error: ${err}`);
-                onBountyRetrieval();
-            })
+        dao.getMetadata(i, bountyDataId)
+        .then(()=> {
+            console.log(`fetched ${i}`);
+        }).catch( (err)=> {console.error(err)})
     };
 }
 
-for (let i = 0; i < numBounties; i++) {
-    contractInstance.getBountyData(i, createBountyDataCallback(i));
-}
-
-const onBountyRetrieval = () => {
-    bountyWaitCount--;
-
-    if (bountyWaitCount == 0) {
-        // we have downloaded all the bounties we can. check the current state
-
-        tmp.file((err, stateFileDownloadPath, fd, cleanupCallback) => {
-            if (err) throw err;
-
-            console.log('Tmp State File: ', stateFileDownloadPath);
-            const stateFileS3Params = {
-                localFile: stateFileDownloadPath,
-                s3Params: {
-                    Bucket: nconf.get('s3_bucket'),
-                    Key: 'state.json'
-                }
-            }
-
-            var downloader = s3Client.downloadFile(stateFileS3Params);
-            downloader.on('error', function (err) {
-                // could not find a state file, lets assume this is the first run
-                if (err.message && err.message.includes("404")) {
-                    onNewItems();
-                } else {
-                    console.error("unknown error downloading state file", err);
-                }
-            });
-            downloader.on('end', function () {
-                console.log("done downloading");
-                fs.readFile(stateFileDownloadPath, (err, data) => {
-                    if (err) throw err;
-                    const currentState = JSON.parse(data);
-                    console.log(`current state: ${currentState}`);
-                    console.log(`currentState.count=${currentState.count}, bountyArray.length=${bountyArray.length}`);
-                    if (currentState.count < bountyArray.length) {
-                        // we have more bounties then there are in the current state
-                        onNewItems();
-                    } else {
-                        // no new bounties
-                        console.log(`no new bounties, done.`);
-                    }
-                });
-            });
-        });
+dao.connect(nconf).then( ()=> {
+    for (let i = 0; i < numBounties; i++) {
+        contractInstance.getBountyData(i, createBountyDataCallback(i));
     }
-}
+}).catch((err)=>{
+    console.error(err);
+});
+
+
+
+
 
 const onNewItems = () => {
     console.log(`creating new feed with ${bountyArray.length} bounties`);
