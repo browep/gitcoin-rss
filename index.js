@@ -41,8 +41,10 @@ console.log(`contractInstance: ${contractInstance}`);
 
 const numBounties = contractInstance.getNumBounties();
 console.log(`numBounties: ${numBounties}`);
+var fetchedMetaData = 0;
 
 const createBountyDataCallback = i => {
+    
     return (error, bountyDataId) => {
         if (error) {
             console.log(`error: ${error}`);
@@ -51,8 +53,16 @@ const createBountyDataCallback = i => {
 
         dao.getMetadata(i, bountyDataId)
         .then(()=> {
-            console.log(`fetched ${i}`);
-        }).catch( (err)=> {console.error(err)})
+            fetchedMetaData++;
+
+            console.log(`fetched ${i}, numBounties=${numBounties}, fetchedMetaData=${fetchedMetaData}`);
+            
+            if (fetchedMetaData == numBounties) {
+                dao.commit()
+            } 
+        }).catch( (err)=> {console.error(err);
+            process.exit(1);
+        })
     };
 }
 
@@ -63,10 +73,6 @@ dao.connect(nconf).then( ()=> {
 }).catch((err)=>{
     console.error(err);
 });
-
-
-
-
 
 const onNewItems = () => {
     console.log(`creating new feed with ${bountyArray.length} bounties`);
