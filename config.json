@@ -1,5 +1,4 @@
 {
-    "eth_address": "http://localhost:8545",
     "contract_address": "0x2af47a65da8CD66729b4209C22017d6A5C2d2400",
     "s3_bucket": "gitcoin-rss",
     "ipfs_url_base": "https://ipfs.io/ipfs/"
