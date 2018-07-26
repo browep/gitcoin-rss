@@ -8,71 +8,27 @@ var _ = require('lodash');
 const format = require('./lib/format.js')
 const dao = require('./lib/dao.js');
 
+
 nconf.argv()
     .env()
     .file({ file: './config.json' });
 
-var s3 = require('s3');
-var s3Client = s3.createClient({
-    s3Options: {
-        accessKeyId: nconf.get("S3_KEY"),
-        secretAccessKey: nconf.get("S3_SECRET"),
-    },
-});
+const repository = require('./lib/repository.js')(nconf);
+const contract = require('./lib/contract.js')(nconf);
 
-const abiArray = require('./contract-abi.json');
-
-const rp = require('request-promise');
-const Web3 = require('web3');
-
-const outputFile = `/tmp/gitcoinrss.json`;
-
-const web3 = new Web3(new Web3.providers.HttpProvider(nconf.get('eth_address')));
-
-const nodeVersion = web3.version.node;
-
-console.log(`node version: ${nodeVersion}`);
-
-const BountyContract = web3.eth.contract(abiArray);
-
-const contractInstance = BountyContract.at(nconf.get('contract_address'));
-
-console.log(`contractInstance: ${contractInstance}`);
-
-const numBounties = contractInstance.getNumBounties();
-console.log(`numBounties: ${numBounties}`);
-var fetchedMetaData = 0;
-
-const createBountyDataCallback = i => {
-    
-    return (error, bountyDataId) => {
-        if (error) {
-            console.log(`error: ${error}`);
-            return;
-        }
-
-        dao.getMetadata(i, bountyDataId)
-        .then(()=> {
-            fetchedMetaData++;
-
-            console.log(`fetched ${i}, numBounties=${numBounties}, fetchedMetaData=${fetchedMetaData}`);
-            
-            if (fetchedMetaData == numBounties) {
-                dao.commit()
-            } 
-        }).catch( (err)=> {console.error(err);
-            process.exit(1);
-        })
-    };
+const bountyDataPromises = [];
+for (let i = 0; i < 15 && i < contract.getNumBounties-1; i++) {
+    bountyDataPromises.push(repository.dataForBounty(contract.getNumBounties-1-i, contract));
 }
 
-dao.connect(nconf).then( ()=> {
-    for (let i = 0; i < numBounties; i++) {
-        contractInstance.getBountyData(i, createBountyDataCallback(i));
-    }
-}).catch((err)=>{
-    console.error(err);
-});
+Promise.all(bountyDataPromises)
+    .then((vals)=> {
+        console.log(`all bounty return values\n${vals}`);
+    })
+    .catch((err)=>{
+        console.error(`error: ${err.stack}`);
+
+    });
 
 const onNewItems = () => {
     console.log(`creating new feed with ${bountyArray.length} bounties`);
