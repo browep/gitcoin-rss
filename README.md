@@ -12,7 +12,7 @@ This small project allowed me to do all of those. A blog post is to come with so
 
 Implemented with NodeJS v8.0.0 and NPM v5.0.0.
 
-If you want to deploy this you need to supply configuration params the Nconf can find ( ENV vars are fine or can be sent in the command line or put in `./config.json`)
+If you want to deploy this you need to supply configuration params that Nconf can find ( ENV vars are fine or can be sent in the command line or put in `./config.json`)
 
 `S3_KEY` = AWS IAM key 
 
