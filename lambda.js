@@ -22,15 +22,12 @@ exports.handler = async (event, context) => {
     try {
         const body = await require("request-promise").post(options);
         console.log(`body: ${JSON.stringify(body)}`);
-        require('./gitcoin-rss.js');
+        const gitcoinRss = require('./gitcoin-rss.js');
+        await gitcoinRss.start();
 
     } catch (e) {
         console.log(`error: ${e.stack}`);
     }
 
-
-
-
-    return event.key1;  // Echo back the first key value
     // throw new Error('Something went wrong');
 };
